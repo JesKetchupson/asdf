@@ -1,9 +1,13 @@
 package main
 
-import "github.com/JesKetchupson/asdf/internal/asdf"
+import (
+	config "github.com/JesKetchupson/asdf/configs"
+	"github.com/JesKetchupson/asdf/internal/asdf"
+)
 
 func main() {
-	if err := asdf.Run(); err != nil {
+	conf := config.ParceConfig()
+	if err := asdf.Run(conf); err != nil {
 		panic(err)
 	}
 }

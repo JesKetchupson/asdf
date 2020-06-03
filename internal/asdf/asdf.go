@@ -1,6 +1,7 @@
 package asdf
 
 import (
+	"database/sql"
 	"encoding/json"
 	"net/http"
 	"net/url"
@@ -13,11 +14,22 @@ import (
 )
 
 type AsdfServer struct {
-	db storage.DB
+	db       storage.DB
+	connPull chan sql.Conn
+}
+
+// for later use
+func (asdf *AsdfServer) InitDBConns() {
+	asdf.connPull = make(chan sql.Conn, 100)
 }
 
 func Run(conf config.AsdfConfig) error {
-	http.HandleFunc("/", ParceNewUri)
+	as := AsdfServer{
+		db: storage.PostgresDB{conf.DBUri},
+	}
+	as.InitDBConns()
+
+	http.HandleFunc("/", as.ParceNewUri)
 
 	if err := http.ListenAndServe(conf.ServerPort, nil); err != nil {
 		return err
@@ -30,7 +42,7 @@ type requestStruct struct {
 	URI string `json:"uri"`
 }
 
-func ParceNewUri(w http.ResponseWriter, r *http.Request) {
+func (asdf *AsdfServer) ParceNewUri(w http.ResponseWriter, r *http.Request) {
 	decoder := json.NewDecoder(r.Body)
 
 	var t requestStruct
